@@ -597,15 +597,31 @@ When any API call encounters an error, the backend returns:
 | :--- | :--- | :--- |
 | `VITE_API_BASE_URL` | Base URL of the backend API gateway | `http://localhost:8080` |
 
----
-
 ## 12. Local Setup Guide
 
 ### Prerequisites
 - **JDK 17+** (Recommended: Java 21 or 22)
 - **Node.js 18+** & **npm 9+**
-- **PostgreSQL 14+**
+- **PostgreSQL 14+** *(Optional for local demo testing)*
 - **Git**
+
+### 12.1 Predefined Demo Account (Local Testing without PostgreSQL)
+
+For immediate local development and demonstration testing without needing a running PostgreSQL instance, a predefined test account is enabled in the development profile:
+
+| Field | Demo Credential |
+| :--- | :--- |
+| **Email** | `demo@textspeech.local` |
+| **Password** | `Demo@12345` |
+| **Display Name** | `Demo User` |
+| **Role** | `ROLE_USER` |
+
+> [!NOTE]
+> **Demo Account Behavior & Architecture:**
+> - **Zero Database Dependency**: When PostgreSQL is offline, the backend's development authentication fallback verifies credentials via BCrypt against a configured password hash and generates an authentic HMAC-SHA256 JWT token.
+> - **In-Memory Speech History**: During local sessions without PostgreSQL, speech history for the demo account is managed in-memory with pre-loaded demo records and resets on server restart.
+> - **PostgreSQL for Persistent Accounts**: PostgreSQL is required for permanent user registration and persistent cross-session history storage. If PostgreSQL is running, the demo account is automatically seeded into the database.
+> - **Production Isolation**: Demo authentication is strictly disabled in production (`app.demo-auth.enabled=false` in `application-prod.yml`). Plaintext passwords are never stored in source code, logs, API responses, or production configurations.
 
 ---
 
@@ -720,13 +736,13 @@ VoxFlow implements a **Stateless JWT Security Architecture**:
 
 ## 18. Testing
 
-VoxFlow features a dual-stack test suite comprising **132 automated tests** across both backend and frontend layers.
+VoxFlow features a dual-stack test suite comprising **141 automated tests** across both backend and frontend layers.
 
 | Layer | Engine | Tests Passed | Command |
 | :--- | :--- | :---: | :--- |
-| **Backend** | Spring Boot Test, MockMvc, JUnit 5, Mockito | **109 / 109** | `cd backend && ./mvnw test` |
+| **Backend** | Spring Boot Test, MockMvc, JUnit 5, Mockito | **118 / 118** | `cd backend && ./mvnw test` |
 | **Frontend** | Vitest 2.1, React Testing Library, JSDOM | **23 / 23** | `cd frontend && npm test` |
-| **Total** | | **132 / 132 (100%)** | |
+| **Total** | | **141 / 141 (100%)** | |
 
 Detailed test descriptions, security verification tests, and error matrix mapping are documented in [TESTING.md](file:///c:/Users/ronak/Desktop/TextSpeech%20Application/text-to-speech/TESTING.md).
 

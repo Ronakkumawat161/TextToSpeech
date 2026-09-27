@@ -74,7 +74,19 @@ export default function RegisterPage() {
             className="mb-5 p-3.5 rounded-xl bg-rose-950/40 border border-rose-500/40 flex items-start gap-2.5 text-rose-300 text-xs sm:text-sm"
           >
             <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5 text-rose-400" aria-hidden="true" />
-            <span>{errorMessage}</span>
+            <div className="flex-1">
+              <span>{errorMessage}</span>
+              {errorMessage.includes('demo@textspeech.local') && (
+                <div className="mt-2">
+                  <Link
+                    to="/login"
+                    className="inline-flex items-center gap-1 font-semibold text-indigo-400 hover:text-indigo-300 underline underline-offset-2"
+                  >
+                    Go to Sign In <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
+                  </Link>
+                </div>
+              )}
+            </div>
           </div>
         )}
 

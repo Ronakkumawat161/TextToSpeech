@@ -62,7 +62,11 @@ apiClient.interceptors.response.use(
       validationErrors = data?.error?.details || data?.validationErrors || null;
 
       if (backendMessage) {
-        userFriendlyMessage = backendMessage;
+        if (/postgres|jdbc|sql|hikari|database/i.test(backendMessage)) {
+          userFriendlyMessage = 'Database is currently unavailable. For local testing, use the demo account: demo@textspeech.local';
+        } else {
+          userFriendlyMessage = backendMessage;
+        }
       } else if (status === 400) {
         userFriendlyMessage = 'Invalid request parameters. Please verify input text, voice, and language.';
       } else if (status === 401) {

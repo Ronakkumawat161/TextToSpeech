@@ -16,3 +16,8 @@ app:
     version: v1
     cors:
       allowed-origins: http://localhost:5173
+  demo-auth:
+    enabled: true
+    email: demo@textspeech.local
+    name: Demo User
+    password-hash: $2a$10$FycIICn.qpMIrA1F7Oy5v.LoiLJ0aBw8NBrsqvE8kshqLP3ZNk0Qm

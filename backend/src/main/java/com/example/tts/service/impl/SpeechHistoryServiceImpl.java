@@ -1,5 +1,6 @@
 package com.example.tts.service.impl;
 
+import com.example.tts.config.DemoAuthProperties;
 import com.example.tts.dto.SpeechHistoryDto;
 import com.example.tts.exception.ForbiddenException;
 import com.example.tts.exception.InvalidRequestException;
@@ -10,25 +11,89 @@ import com.example.tts.model.User;
 import com.example.tts.repository.SpeechHistoryRepository;
 import com.example.tts.service.AuthService;
 import com.example.tts.service.SpeechHistoryService;
-import lombok.RequiredArgsConstructor;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 /**
  * Service implementation for managing Speech History with user isolation.
  * Ensures users only access and manage their own speech records.
+ * Provides in-memory development history for the demo account when PostgreSQL is unavailable.
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class SpeechHistoryServiceImpl implements SpeechHistoryService {
 
     private final SpeechHistoryRepository historyRepository;
     private final AuthService authService;
+    private final DemoAuthProperties demoAuthProperties;
+
+    // Development-only in-memory storage for demo user history when database is offline
+    private final ConcurrentMap<Long, SpeechHistoryDto> inMemoryDemoHistory = new ConcurrentHashMap<>();
+    private final AtomicLong demoIdCounter = new AtomicLong(5000);
+
+    public SpeechHistoryServiceImpl(SpeechHistoryRepository historyRepository, AuthService authService) {
+        this(historyRepository, authService, new DemoAuthProperties());
+    }
+
+    @Autowired
+    public SpeechHistoryServiceImpl(
+            SpeechHistoryRepository historyRepository,
+            AuthService authService,
+            DemoAuthProperties demoAuthProperties) {
+        this.historyRepository = historyRepository;
+        this.authService = authService;
+        this.demoAuthProperties = demoAuthProperties != null ? demoAuthProperties : new DemoAuthProperties();
+        initDemoHistory();
+    }
+
+    @PostConstruct
+    public void initDemoHistory() {
+        if (demoAuthProperties.isEnabled()) {
+            long id1 = demoIdCounter.incrementAndGet();
+            inMemoryDemoHistory.put(id1, SpeechHistoryDto.builder()
+                    .id(id1)
+                    .userId(-1L)
+                    .userEmail(demoAuthProperties.getEmail())
+                    .text("Welcome to VoxFlow Speech Studio! This is a pre-loaded speech sample in your development session.")
+                    .language("en-US")
+                    .voice("en-US-JennyNeural")
+                    .characterCount(88)
+                    .speed(1.0)
+                    .pitch(0)
+                    .volume(1.0)
+                    .style("cheerful")
+                    .favorite(true)
+                    .createdAt(LocalDateTime.now().minusHours(2))
+                    .build());
+
+            long id2 = demoIdCounter.incrementAndGet();
+            inMemoryDemoHistory.put(id2, SpeechHistoryDto.builder()
+                    .id(id2)
+                    .userId(-1L)
+                    .userEmail(demoAuthProperties.getEmail())
+                    .text("Artificial intelligence and neural speech synthesis bring text to life with human-like intonation.")
+                    .language("en-US")
+                    .voice("en-US-GuyNeural")
+                    .characterCount(99)
+                    .speed(1.0)
+                    .pitch(0)
+                    .volume(1.0)
+                    .style("default")
+                    .favorite(false)
+                    .createdAt(LocalDateTime.now().minusMinutes(35))
+                    .build());
+        }
+    }
 
     @Override
     public SpeechHistoryDto saveHistory(
@@ -112,8 +177,34 @@ public class SpeechHistoryServiceImpl implements SpeechHistoryService {
             return mapToDto(saved);
 
         } catch (Exception ex) {
-            // Graceful failure: speech synthesis flow continues uninterrupted if DB is unavailable
             log.warn("Database persistence failed: {}. Synthesis flow will continue uninterrupted.", ex.getMessage());
+
+            // If demo auth is enabled and user is the demo user, save to in-memory history
+            if (demoAuthProperties.isEnabled() && user != null && user.getEmail() != null
+                    && user.getEmail().equalsIgnoreCase(demoAuthProperties.getEmail())) {
+                long inMemoryId = demoIdCounter.incrementAndGet();
+                SpeechHistoryDto inMemoryDto = SpeechHistoryDto.builder()
+                        .id(inMemoryId)
+                        .userId(user.getId())
+                        .userEmail(user.getEmail())
+                        .text(text)
+                        .language(language)
+                        .voice(voice)
+                        .audioUrl(audioUrl)
+                        .storageReference(storageReference)
+                        .characterCount(characterCount)
+                        .speed(speed != null ? speed : 1.0)
+                        .pitch(pitch != null ? pitch : 0)
+                        .volume(volume != null ? volume : 1.0)
+                        .style(style != null ? style : "default")
+                        .favorite(false)
+                        .createdAt(LocalDateTime.now())
+                        .build();
+                inMemoryDemoHistory.put(inMemoryId, inMemoryDto);
+                log.info("Recorded in-memory demo history ID: {} for user: {}", inMemoryId, user.getEmail());
+                return inMemoryDto;
+            }
+
             return SpeechHistoryDto.builder()
                     .userId(user != null ? user.getId() : null)
                     .userEmail(user != null ? user.getEmail() : null)
@@ -132,15 +223,18 @@ public class SpeechHistoryServiceImpl implements SpeechHistoryService {
         }
     }
 
-
     @Override
     public List<SpeechHistoryDto> getAllHistory() {
+        User currentUser = null;
         try {
-            User currentUser = authService.getCurrentUserEntity();
-            List<SpeechHistory> list;
+            currentUser = authService.getCurrentUserEntity();
+        } catch (Exception ex) {
+            log.debug("Could not resolve current user entity: {}", ex.getMessage());
+        }
 
-            if (currentUser != null) {
-                // Enforce user isolation: only retrieve the authenticated user's records
+        try {
+            List<SpeechHistory> list;
+            if (currentUser != null && currentUser.getId() != null && currentUser.getId() > 0) {
                 list = historyRepository.findAllByUserIdOrderByCreatedAtDesc(currentUser.getId());
             } else {
                 list = historyRepository.findAllByOrderByCreatedAtDesc();
@@ -152,6 +246,17 @@ public class SpeechHistoryServiceImpl implements SpeechHistoryService {
 
         } catch (Exception ex) {
             log.warn("Database unavailable during getAllHistory: {}", ex.getMessage());
+
+            // If demo auth is enabled and user is demo user, return in-memory history
+            if (demoAuthProperties.isEnabled() && currentUser != null && currentUser.getEmail() != null
+                    && currentUser.getEmail().equalsIgnoreCase(demoAuthProperties.getEmail())) {
+                log.info("Returning in-memory demo history for '{}' (count: {})",
+                        currentUser.getEmail(), inMemoryDemoHistory.size());
+                return inMemoryDemoHistory.values().stream()
+                        .sorted(Comparator.comparing(SpeechHistoryDto::getCreatedAt).reversed())
+                        .collect(Collectors.toList());
+            }
+
             throw new ServiceUnavailableException("Database service is temporarily unavailable. Please verify PostgreSQL connection.");
         }
     }
@@ -166,15 +271,18 @@ public class SpeechHistoryServiceImpl implements SpeechHistoryService {
             SpeechHistory entity = historyRepository.findById(id)
                     .orElseThrow(() -> new ResourceNotFoundException("SpeechHistory", "id", id));
 
-            // Enforce user isolation: user A cannot access user B's history
             checkOwnership(entity, id, "access");
-
             return mapToDto(entity);
 
         } catch (ResourceNotFoundException | InvalidRequestException | ForbiddenException ex) {
             throw ex;
         } catch (Exception ex) {
             log.warn("Database unavailable during getHistoryById({}): {}", id, ex.getMessage());
+
+            if (demoAuthProperties.isEnabled() && inMemoryDemoHistory.containsKey(id)) {
+                return inMemoryDemoHistory.get(id);
+            }
+
             throw new ServiceUnavailableException("Database service is temporarily unavailable. Please verify PostgreSQL connection.");
         }
     }
@@ -189,9 +297,7 @@ public class SpeechHistoryServiceImpl implements SpeechHistoryService {
             SpeechHistory entity = historyRepository.findById(id)
                     .orElseThrow(() -> new ResourceNotFoundException("SpeechHistory", "id", id));
 
-            // Enforce user isolation: user A cannot delete user B's history
             checkOwnership(entity, id, "delete");
-
             historyRepository.delete(entity);
             log.info("Deleted speech history record with ID: {}", id);
 
@@ -199,6 +305,13 @@ public class SpeechHistoryServiceImpl implements SpeechHistoryService {
             throw ex;
         } catch (Exception ex) {
             log.warn("Database unavailable during deleteHistoryById({}): {}", id, ex.getMessage());
+
+            if (demoAuthProperties.isEnabled() && inMemoryDemoHistory.containsKey(id)) {
+                inMemoryDemoHistory.remove(id);
+                log.info("Deleted in-memory demo speech history record with ID: {}", id);
+                return;
+            }
+
             throw new ServiceUnavailableException("Database service is temporarily unavailable. Please verify PostgreSQL connection.");
         }
     }
@@ -226,6 +339,13 @@ public class SpeechHistoryServiceImpl implements SpeechHistoryService {
             throw ex;
         } catch (Exception ex) {
             log.warn("Database unavailable during toggleFavorite({}): {}", id, ex.getMessage());
+
+            if (demoAuthProperties.isEnabled() && inMemoryDemoHistory.containsKey(id)) {
+                SpeechHistoryDto item = inMemoryDemoHistory.get(id);
+                item.setFavorite(!Boolean.TRUE.equals(item.getFavorite()));
+                return item;
+            }
+
             throw new ServiceUnavailableException("Database service is temporarily unavailable. Please verify PostgreSQL connection.");
         }
     }

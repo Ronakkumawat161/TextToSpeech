@@ -64,6 +64,8 @@ app:
   jwt:
     secret: ${JWT_SECRET}
     expiration-ms: ${JWT_EXPIRATION_MS:86400000}
+  demo-auth:
+    enabled: false
 
 logging:
   level:

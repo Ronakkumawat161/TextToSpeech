@@ -52,6 +52,11 @@ app:
   jwt:
     secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
     expiration-ms: ${JWT_EXPIRATION_MS:86400000}
+  demo-auth:
+    enabled: ${DEMO_AUTH_ENABLED:true}
+    email: ${DEMO_USER_EMAIL:demo@textspeech.local}
+    name: ${DEMO_USER_NAME:Demo User}
+    password-hash: ${DEMO_USER_PASSWORD_HASH:$2a$10$FycIICn.qpMIrA1F7Oy5v.LoiLJ0aBw8NBrsqvE8kshqLP3ZNk0Qm}
 
 logging:
   level:

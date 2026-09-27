@@ -317,7 +317,7 @@ public class GlobalExceptionHandler {
 
         ErrorResponse response = ErrorResponse.of(
                 "SERVICE_UNAVAILABLE",
-                "Database service is temporarily unavailable. Please verify PostgreSQL connection."
+                "Database service is temporarily unavailable. For local testing, use the demo account: demo@textspeech.local"
         );
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(response);
     }

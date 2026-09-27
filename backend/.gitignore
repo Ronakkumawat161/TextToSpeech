@@ -1,0 +1,36 @@
+# ==============================================================================
+# Git Ignore Configuration - Backend
+# ==============================================================================
+
+# Build artifacts
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# Environment files and secrets
+.env
+.env.*
+!.env.example
+*.env
+*.pem
+*.key
+*.p12
+*.jks
+
+# IDE and Project files
+.idea/
+.vscode/
+*.iml
+.classpath
+.project
+.settings/
+
+# Logs
+logs/
+*.log
+
+# OS & Temp
+.DS_Store
+Thumbs.db
+*.tmp

@@ -1,0 +1,116 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  *, ::before, ::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    color-scheme: dark;
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-slate-950 text-slate-100 font-sans;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Accessible focus indicators */
+  :focus-visible {
+    @apply outline-none ring-2 ring-indigo-500 ring-offset-2 ring-offset-slate-950;
+  }
+}
+
+/* Professional SaaS Surface Components */
+@layer components {
+  /* Primary solid card surface */
+  .saas-card {
+    @apply bg-slate-900 border border-slate-800 rounded-2xl shadow-sm transition-colors duration-150;
+  }
+
+  .saas-card:hover {
+    @apply border-slate-700/80;
+  }
+
+  /* Secondary / subtle recessed card surface */
+  .saas-card-muted {
+    @apply bg-slate-950/60 border border-slate-800/80 rounded-xl;
+  }
+
+  /* Legacy aliases for backward compatibility, mapped to clean solid SaaS surfaces */
+  .glass-panel {
+    @apply bg-slate-900/90 border border-slate-800 rounded-2xl backdrop-blur-sm;
+  }
+
+  .glass-card {
+    @apply bg-slate-900 border border-slate-800 rounded-2xl transition-colors duration-150;
+  }
+
+  .glass-card:hover {
+    @apply border-slate-700;
+  }
+}
+
+/* Range input thumb & track styling */
+input[type="range"] {
+  @apply accent-indigo-500;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #6366f1;
+  border: 2px solid #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  transition: transform 0.1s ease, background-color 0.1s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+  background: #4f46e5;
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #6366f1;
+  border: 2px solid #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  transition: transform 0.1s ease, background-color 0.1s ease;
+}
+
+input[type="range"]::-moz-range-thumb:hover {
+  transform: scale(1.15);
+  background: #4f46e5;
+}
+
+/* Custom crisp dark scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #090d16;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}

@@ -1,0 +1,44 @@
+package com.example.tts.controller;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+
+import static org.hamcrest.Matchers.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@SpringBootTest
+@AutoConfigureMockMvc
+class VoiceControllerTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Test
+    void testGetAllVoices() throws Exception {
+        mockMvc.perform(get("/api/voices")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(greaterThanOrEqualTo(2))))
+                .andExpect(jsonPath("$[0].id").exists())
+                .andExpect(jsonPath("$[0].name").exists())
+                .andExpect(jsonPath("$[0].language").exists())
+                .andExpect(jsonPath("$[0].gender").exists())
+                .andExpect(jsonPath("$[*].id", hasItem("en-female-1")))
+                .andExpect(jsonPath("$[*].id", hasItem("en-male-1")));
+    }
+
+    @Test
+    void testGetVoicesFilteredByLanguage() throws Exception {
+        mockMvc.perform(get("/api/voices")
+                .param("language", "en-US")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(greaterThanOrEqualTo(2))))
+                .andExpect(jsonPath("$[0].language").value("en-US"));
+    }
+}

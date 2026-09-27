@@ -1,0 +1,28 @@
+# ==============================================================================
+# VoxFlow Audio Studio - Common Application Configuration (Base Profile)
+# Profile resolution: Defaults to 'dev' when no profile is explicitly specified.
+# ==============================================================================
+server:
+  port: ${PORT:${SERVER_PORT:8080}}
+
+spring:
+  application:
+    name: text-to-speech
+  profiles:
+    default: dev
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 10MB
+      max-request-size: 15MB
+
+app:
+  api:
+    version: v1
+  security:
+    headers:
+      enabled: true
+      frame-options: DENY
+      content-type-options: nosniff
+      xss-protection: "1; mode=block"
+      referrer-policy: strict-origin-when-cross-origin
